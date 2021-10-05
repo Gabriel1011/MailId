@@ -1,7 +1,11 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using EAGetMail;
+using SelectPdf;
 
 namespace MailId
 {
@@ -17,8 +21,6 @@ namespace MailId
 
         public static void ReadEmail()
         {
-            // site de como implmentar o aegetemail https://www.thecodehubs.com/read-email-from-gmail-and-outlook-in-c-sharp/
-
             var oServer = new MailServer("imap.gmail.com", "space.just.it@gmail.com", "rvdxvfptcznlabiy", ServerProtocol.Imap4);
             MailClient oClient = new MailClient("TryIt");
 
@@ -30,12 +32,15 @@ namespace MailId
             oClient.Connect(oServer);
             MailInfo[] infos = oClient.GetMailInfos();
 
-            for (int i = infos.Length - 1; i > 0; i--)
+
+            foreach (var info in infos.Where(e => !e.Read))
             {
-                MailInfo info = infos[i];
                 Mail oMail = oClient.GetMail(info);
 
-                System.Console.WriteLine(oMail.Subject);
+                System.Console.WriteLine(oMail.Subject + " - Marcado como lido!!");
+                //oClient.MarkAsRead(info, true);
+
+                ConvertHtml(oMail.HtmlBody);
 
                 // var count = oMail.Attachments.ToList().Count;
                 // for (int j = 0; j < count; j++)
@@ -43,6 +48,7 @@ namespace MailId
                 //     oMail.Attachments[j].SaveAs(oServer.MapPath("~/Inbox") + "\\" + oMail.Attachments[j].Name, true); // true for overWrite file
                 // }
             }
+
         }
 
         public static void SendEmail()
@@ -62,6 +68,27 @@ namespace MailId
             msg.Subject = "Teste de mensagem";
             msg.Body = "Teste";
             client.Send(msg);
+        }
+
+        public static void ConvertHtml(string html)
+        {
+            html = html.Replace("StrTag", "<").Replace("EndTag", ">");
+
+            HtmlToPdf htmlToPdf = new HtmlToPdf();
+            PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(html);
+
+            pdfDocument.Save(@"C:\dev\MailId\teste.pdf");
+            pdfDocument.Close();
+
+            //var arquivo = @"C:\dev\MailId\teste.html";
+            //using var teste = File.Create(arquivo);
+            //byte[] info = new UTF8Encoding(true).GetBytes(html);
+            //teste.Write(info, 0, info.Length);
+
+            //if (File.Exists(arquivo))
+            //{
+            //    string outoputFile = @"C:\dev\MailId\teste.pdf";
+            //}
         }
     }
 }
