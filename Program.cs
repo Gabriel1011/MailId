@@ -77,7 +77,7 @@ namespace MailId
             HtmlToPdf htmlToPdf = new HtmlToPdf();
             PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(html);
 
-            pdfDocument.Save(@"C:\dev\MailId\teste.pdf");
+            pdfDocument.Save(@"C:\dev\MailId\Docs\teste.pdf");
             pdfDocument.Close();
 
             //var arquivo = @"C:\dev\MailId\teste.html";
