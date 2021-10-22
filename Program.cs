@@ -7,6 +7,11 @@ using System.Text;
 using EAGetMail;
 using SelectPdf;
 
+/*
+Link de referencia:
+https://stackoverflow.com/questions/7056715/reading-emails-from-gmail-in-c-sharp/19570553#19570553
+*/
+
 namespace MailId
 {
     class Program
@@ -21,7 +26,10 @@ namespace MailId
 
         public static void ReadEmail()
         {
-            var oServer = new MailServer("imap.gmail.com", "space.just.it@gmail.com", "rvdxvfptcznlabiy", ServerProtocol.Imap4);
+            // var oServer = new MailServer("imap.gmail.com", "space.just.it@gmail.com", "rvdxvfptcznlabiy", ServerProtocol.Imap4);
+
+            var oServer = new MailServer("imap.gmail.com", "gabriel.rodrigues.almeida1@gmail.com", "jexxcmptvegsvtvv", ServerProtocol.Imap4);
+
             MailClient oClient = new MailClient("TryIt");
 
             oServer.SSLConnection = true;
@@ -36,11 +44,10 @@ namespace MailId
             foreach (var info in infos.Where(e => !e.Read))
             {
                 Mail oMail = oClient.GetMail(info);
-
                 System.Console.WriteLine(oMail.Subject + " - Marcado como lido!!");
-                //oClient.MarkAsRead(info, true);
+                oClient.MarkAsRead(info, true);
 
-                ConvertHtml(oMail.HtmlBody);
+                // ConvertHtml(oMail.HtmlBody);
 
                 // var count = oMail.Attachments.ToList().Count;
                 // for (int j = 0; j < count; j++)
