@@ -10,6 +10,7 @@
     <PackageReference Include="EAGetMail" Version="5.2.2.2" />
     <PackageReference Include="IronPdf" Version="2021.9.3737" />
     <PackageReference Include="itext7.pdfhtml" Version="3.0.5" />
+    <PackageReference Include="MimeKit" Version="2.15.1" />
     <PackageReference Include="Select.HtmlToPdf.NetCore" Version="21.1.0" />
   </ItemGroup>
 
