@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
 using EAGetMail;
+using iText.Html2pdf;
 using SelectPdf;
 
 namespace MailId
@@ -21,26 +23,25 @@ namespace MailId
 
         public static void ReadEmail()
         {
-            var oServer = new MailServer("imap.gmail.com", "space.just.it@gmail.com", "rvdxvfptcznlabiy", ServerProtocol.Imap4);
+            var oServer = new MailServer("imap.gmail.com", "space.just.it@gmail.com", "rvdxvfptcznlabiy", ServerProtocol.Imap4)
+            {
+                SSLConnection = true,
+                Port = 993
+            };
+            
             MailClient oClient = new MailClient("TryIt");
-
-            oServer.SSLConnection = true;
-            oServer.Port = 993;
-
             oClient.GetMailInfosParam.GetMailInfosOptions = GetMailInfosOptionType.NewOnly;
 
             oClient.Connect(oServer);
-            MailInfo[] infos = oClient.GetMailInfos();
 
-
-            foreach (var info in infos.Where(e => !e.Read))
+            foreach (var info in oClient.GetMailInfos().Where(e => !e.Read))
             {
                 Mail oMail = oClient.GetMail(info);
 
                 System.Console.WriteLine(oMail.Subject + " - Marcado como lido!!");
                 //oClient.MarkAsRead(info, true);
 
-                ConvertHtml(oMail.HtmlBody);
+                ConvertHtml(oMail.HtmlBody, oMail.Subject);
 
                 // var count = oMail.Attachments.ToList().Count;
                 // for (int j = 0; j < count; j++)
@@ -48,7 +49,6 @@ namespace MailId
                 //     oMail.Attachments[j].SaveAs(oServer.MapPath("~/Inbox") + "\\" + oMail.Attachments[j].Name, true); // true for overWrite file
                 // }
             }
-
         }
 
         public static void SendEmail()
@@ -70,25 +70,67 @@ namespace MailId
             client.Send(msg);
         }
 
-        public static void ConvertHtml(string html)
+        public static void ConvertHtml(string html, string subject)
         {
-            html = html.Replace("StrTag", "<").Replace("EndTag", ">");
+            var teste = new Stopwatch();
+
+            teste.Start();
+
+            File.WriteAllText($@"C:\dev\MailId\Docs\hmtl_{Guid.NewGuid()}.html", html);
+
+            #region SelectPdf
+            //html = html.Replace("StrTag", "<").Replace("EndTag", ">");
 
             HtmlToPdf htmlToPdf = new HtmlToPdf();
             PdfDocument pdfDocument = htmlToPdf.ConvertHtmlString(html);
 
-            pdfDocument.Save(@"C:\dev\MailId\Docs\teste.pdf");
+            pdfDocument.Save($@"C:\dev\MailId\Docs\{subject}_{Guid.NewGuid()}.pdf");
             pdfDocument.Close();
 
-            //var arquivo = @"C:\dev\MailId\teste.html";
-            //using var teste = File.Create(arquivo);
-            //byte[] info = new UTF8Encoding(true).GetBytes(html);
-            //teste.Write(info, 0, info.Length);
+            teste.WriteConsoleConversor("Gerador SelectPdf");
+            #endregion
 
-            //if (File.Exists(arquivo))
-            //{
-            //    string outoputFile = @"C:\dev\MailId\teste.pdf";
-            //}
+            #region Html2pdf
+
+            teste.ResetTimer();
+
+            var arquivo = $@"C:\dev\MailId\Docs\{subject}_{Guid.NewGuid()}.pdf";
+            using var fileHtml = File.Create(arquivo);
+            byte[] info = new UTF8Encoding(true).GetBytes(html);
+            fileHtml.Write(info, 0, info.Length);
+            fileHtml.Dispose();
+
+            using (FileStream htmlSource = File.Open(arquivo, FileMode.Open))
+            using (FileStream pdfDest = File.Open($@"C:\dev\MailId\Docs\teste_{Guid.NewGuid()}.pdf", FileMode.OpenOrCreate))
+            {
+                ConverterProperties converterProperties = new ConverterProperties();
+                HtmlConverter.ConvertToPdf(htmlSource, pdfDest, converterProperties);
+            }
+
+            teste.WriteConsoleConversor("Gerador Html2pdf");
+
+            #endregion
+
+            #region IronPDF
+
+            teste.ResetTimer();
+
+            var Renderer = new IronPdf.ChromePdfRenderer();
+            Renderer.RenderHtmlAsPdf(html).SaveAs($@"C:\dev\MailId\Docs\{subject}_{Guid.NewGuid()}.pdf");
+
+            teste.WriteConsoleConversor("Gerador IronPDF");
+
+            #endregion
+
+            #region DinkPDF
+
+            teste.ResetTimer();
+
+            new DinkToPDF().ConverterDink(html, subject);
+
+            teste.WriteConsoleConversor("Conversor DinkToPDF");
+
+            #endregion
         }
     }
 }
